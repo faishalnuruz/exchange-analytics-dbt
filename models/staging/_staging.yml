@@ -1,0 +1,72 @@
+version: 2
+
+models:
+  - name: stg_app__users
+    description: Users, typed. Email is hashed here and the raw value goes no further.
+    columns:
+      - name: user_id
+        data_tests: [unique, not_null]
+      - name: account_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [active, suspended, closed]
+
+  - name: stg_app__kyc_submissions
+    description: KYC attempts, typed.
+    columns:
+      - name: submission_id
+        data_tests: [unique, not_null]
+      - name: kyc_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [pending, approved, rejected]
+
+  - name: stg_app__deposits
+    description: Deposits, typed, with currency codes normalised to upper case.
+    columns:
+      - name: deposit_id
+        data_tests: [unique, not_null]
+      - name: asset_code
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('asset_reference')
+                field: asset_code
+
+  - name: stg_app__withdrawals
+    description: Withdrawals, typed, with currency codes normalised to upper case.
+    columns:
+      - name: withdrawal_id
+        data_tests: [unique, not_null]
+      - name: asset_code
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('asset_reference')
+                field: asset_code
+
+  - name: stg_app__trades
+    description: Trade executions, typed.
+    columns:
+      - name: trade_id
+        data_tests: [unique, not_null]
+      - name: side
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [buy, sell]
+
+  - name: stg_market__asset_prices
+    description: One closing price per asset per day.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [price_date, asset_code]
+
+  - name: stg_tracking__events
+    description: Tracking events with duplicate deliveries removed. One row per event_id.
+    columns:
+      - name: event_id
+        data_tests: [unique, not_null]

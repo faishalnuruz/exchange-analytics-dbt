@@ -1,0 +1,39 @@
+version: 2
+
+models:
+  - name: int_transactions__unioned
+    description: Deposits, withdrawals and trades in one shape. One row per source record.
+    columns:
+      - name: transaction_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [completed, pending, failed, cancelled]
+  - name: int_transactions__priced
+    description: int_transactions__unioned with USD amounts at the daily closing price.
+  - name: int_users__kyc_summary
+    description: KYC attempts collapsed to one row per user.
+    columns:
+      - name: user_id
+        data_tests: [unique, not_null]
+
+unit_tests:
+  - name: usd_value_uses_price_of_the_transaction_day
+    description: >
+      Amount is valued in the traded asset, the fee in the fee asset, both at the price of the
+      day the transaction happened, not the latest price.
+    model: int_transactions__priced
+    given:
+      - input: ref('int_transactions__unioned')
+        rows:
+          - {source_table: trade, source_id: t1, user_id: 1, transaction_type: trade_buy, asset_code: BTC, amount: 0.5, fee_amount: 30, fee_asset_code: USDT, transaction_status: completed, occurred_at: "2026-08-01 10:00:00", arrived_at: "2026-08-01 10:00:05"}
+          - {source_table: deposit, source_id: d1, user_id: 1, transaction_type: deposit, asset_code: DOGE, amount: 100, fee_amount: 1, fee_asset_code: DOGE, transaction_status: completed, occurred_at: "2026-08-01 11:00:00", arrived_at: "2026-08-01 11:00:05"}
+      - input: ref('stg_market__asset_prices')
+        rows:
+          - {price_date: "2026-08-01", asset_code: BTC, price_usd: 60000}
+          - {price_date: "2026-08-02", asset_code: BTC, price_usd: 99999}
+          - {price_date: "2026-08-01", asset_code: USDT, price_usd: 1}
+    expect:
+      rows:
+        - {source_id: t1, amount_usd: 30000, fee_usd: 30}
+        - {source_id: d1, amount_usd: null, fee_usd: null}

@@ -1,0 +1,25 @@
+version: 2
+
+models:
+  - name: mart_user_funnel
+    description: "Onboarding funnel. Grain: one row per user, with current attributes."
+    columns:
+      - name: user_id
+        data_tests: [unique, not_null]
+
+  - name: mart_daily_kpis
+    description: "Company KPIs. Grain: one row per calendar day, quiet days included."
+    columns:
+      - name: date_day
+        data_tests: [unique, not_null]
+
+exposures:
+  - name: growth_dashboard
+    type: dashboard
+    maturity: medium
+    description: Daily KPIs and the onboarding funnel, as used by growth and finance.
+    depends_on:
+      - ref('mart_daily_kpis')
+      - ref('mart_user_funnel')
+    owner:
+      name: Data team

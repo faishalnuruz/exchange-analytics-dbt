@@ -1,0 +1,36 @@
+version: 2
+
+# Raw extracts land as CSV in data/raw/. Every column is read as text (all_varchar) so that
+# typing is an explicit, reviewable decision in the staging models, not an inference.
+sources:
+  - name: app
+    description: Exchange backend database (OLTP). Daily extract.
+    meta:
+      external_location: "read_csv('data/raw/{name}.csv', all_varchar = true, header = true)"
+    tables:
+      - name: users
+        description: One row per registered user, current state. Rows are updated in place.
+      - name: kyc_submissions
+        description: One row per identity verification attempt.
+      - name: deposits
+        description: One row per deposit request. Status is updated in place.
+      - name: withdrawals
+        description: One row per withdrawal request. Status is updated in place.
+      - name: trades
+        description: One row per order execution from the matching engine.
+
+  - name: market
+    description: Daily closing prices from a market data provider.
+    meta:
+      external_location: "read_csv('data/raw/{name}.csv', all_varchar = true, header = true)"
+    tables:
+      - name: asset_prices
+
+  - name: tracking
+    description: >
+      Product analytics events, in the shape of a GA4 / Mixpanel export. Clients retry on
+      timeouts, so exact duplicates are expected, and offline devices deliver events days late.
+    meta:
+      external_location: "read_csv('data/raw/{name}.csv', all_varchar = true, header = true)"
+    tables:
+      - name: tracking_events

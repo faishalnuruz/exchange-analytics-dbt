@@ -1,0 +1,6 @@
+asset_code,asset_name,asset_type
+BTC,Bitcoin,crypto
+ETH,Ethereum,crypto
+SOL,Solana,crypto
+USDT,Tether,stablecoin
+USD,US Dollar,fiat

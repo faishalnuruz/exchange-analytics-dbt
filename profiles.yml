@@ -1,0 +1,9 @@
+# Local DuckDB file. No credentials, so this profile is safe to commit.
+exchange_analytics:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: exchange.duckdb
+      schema: main
+      threads: 4

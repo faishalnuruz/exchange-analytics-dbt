@@ -1,0 +1,15 @@
+version: 2
+
+snapshots:
+  - name: snap_app__users
+    description: >
+      Type 2 history of the users table. The backend overwrites country, KYC level and account
+      status in place, so without this the warehouse could only ever report today's value.
+      History starts at the first snapshot run; anything before that is not recoverable.
+    relation: ref('stg_app__users')
+    config:
+      unique_key: user_id
+      strategy: timestamp
+      updated_at: updated_at
+      # Open rows get a far-future date instead of NULL, so range joins need no special case.
+      dbt_valid_to_current: "timestamp '9999-12-31'"

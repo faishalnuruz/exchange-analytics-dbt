@@ -1,0 +1,98 @@
+version: 2
+
+models:
+  - name: dim_user
+    description: >
+      Type 2 user dimension. Grain: one row per user per version. Tracked attributes:
+      country_code, kyc_level, account_status. Includes one 'unknown' member (user_id -1).
+    columns:
+      - name: user_key
+        description: Surrogate key of the version. This is what facts join to.
+        data_tests: [unique, not_null]
+      - name: user_id
+        description: Natural key from the backend. Repeats across versions.
+        data_tests: [not_null]
+      - name: valid_from
+        description: Start of the version (inclusive). The first version starts at registration.
+      - name: valid_to
+        description: End of the version (exclusive). 9999-12-31 for the current version.
+      - name: is_current
+        description: True for the latest version of each user.
+
+  - name: dim_asset
+    description: One row per tradable or depositable asset.
+    columns:
+      - name: asset_key
+        data_tests: [unique, not_null]
+
+  - name: dim_date
+    description: Calendar dimension, one row per day.
+    columns:
+      - name: date_key
+        description: Integer in YYYYMMDD form.
+        data_tests: [unique, not_null]
+
+  - name: fct_transaction
+    description: >
+      Transaction fact. Grain: one row per money movement (a deposit, a withdrawal, or a
+      trade execution). Incremental, delete+insert.
+    columns:
+      - name: transaction_key
+        data_tests: [unique, not_null]
+      - name: user_key
+        description: The dim_user version valid at occurred_at.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_user')
+                field: user_key
+      - name: asset_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_asset')
+                field: asset_key
+      - name: date_key
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_key
+      - name: amount_usd
+        description: Asset amount valued at the closing price of the transaction day.
+        data_tests: [not_null]
+      - name: transaction_type
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [deposit, withdrawal, trade_buy, trade_sell]
+
+  - name: fct_kyc_submission
+    description: "KYC fact. Grain: one row per verification attempt."
+    columns:
+      - name: kyc_submission_key
+        data_tests: [unique, not_null]
+      - name: user_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_user')
+                field: user_key
+
+  - name: fct_event
+    description: >
+      Product analytics fact. Grain: one row per tracking event. Anonymous events point at the
+      'unknown' user. Incremental by received_at.
+    columns:
+      - name: event_id
+        data_tests: [unique, not_null]
+      - name: user_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_user')
+                field: user_key

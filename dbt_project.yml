@@ -1,0 +1,41 @@
+name: exchange_analytics
+version: 1.0.0
+config-version: 2
+profile: exchange_analytics
+
+model-paths: [models]
+seed-paths: [seeds]
+snapshot-paths: [snapshots]
+macro-paths: [macros]
+test-paths: [tests]
+clean-targets: [target, dbt_packages]
+
+vars:
+  # Incremental models re-read this many days behind their own high-water mark on every run.
+  # Raise it for a one-off catch-up:  dbt build --vars '{incremental_lookback_days: 30}'
+  incremental_lookback_days: 3
+  dim_date_start: '2026-07-01'
+  dim_date_end: '2027-01-01'
+
+models:
+  exchange_analytics:
+    staging:
+      +materialized: view
+      +schema: staging
+    intermediate:
+      +materialized: view
+      +schema: intermediate
+    marts:
+      +materialized: table
+      core:
+        +schema: core
+      reporting:
+        +schema: reporting
+
+seeds:
+  exchange_analytics:
+    +schema: seeds
+
+snapshots:
+  exchange_analytics:
+    +schema: snapshots
