@@ -3,6 +3,10 @@
 
 Everything here is generated. No real users, no real company data.
 
+This plays the part of the extract step: it writes what the source systems would return
+on a given day into data/extract/. scripts/load_raw.py then appends those rows to the raw
+tables in the warehouse.
+
 The full timeline (START..END) is always generated from the same seed, then cut at
 --as-of. A row is written only if the source system would have had it by then, and
 mutable rows (users, deposits, withdrawals) show their state as of that moment. Running
@@ -253,7 +257,7 @@ def write_csv(path: Path, header, rows):
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--as-of", default=END.date().isoformat(), help="extract date, YYYY-MM-DD (end of that day)")
-    parser.add_argument("--out", default="data/raw")
+    parser.add_argument("--out", default="data/extract")
     args = parser.parse_args()
 
     as_of = datetime.combine(date.fromisoformat(args.as_of), datetime.max.time()).replace(microsecond=0)
@@ -288,10 +292,11 @@ def main():
         done = k["reviewed_at"] <= as_of
         rows.append([k["submission_id"], k["user_id"], k["attempt_number"], k["document_type"],
                      k["final_status"] if done else "pending", k["rejection_reason"] if done else "",
-                     fmt(k["submitted_at"]), fmt(k["reviewed_at"]) if done else ""])
+                     fmt(k["submitted_at"]), fmt(k["reviewed_at"]) if done else "",
+                     fmt(k["reviewed_at"] if done else k["submitted_at"])])
     write_csv(out / "kyc_submissions.csv",
               ["submission_id", "user_id", "attempt_number", "document_type", "status", "rejection_reason",
-               "submitted_at", "reviewed_at"], rows)
+               "submitted_at", "reviewed_at", "updated_at"], rows)
 
     rows = []
     for d in deposits:

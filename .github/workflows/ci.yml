@@ -9,6 +9,8 @@ permissions:
   contents: read
 
 env:
+  PY: python
+  DBT: dbt
   DBT_PROFILES_DIR: ${{ github.workspace }}
 
 jobs:
@@ -27,18 +29,14 @@ jobs:
 
       # Two extracts a week apart, so CI exercises what a single run cannot:
       # the first load, then SCD2 versioning and the incremental path.
-      - name: Day 1 - full load and first snapshot
-        run: |
-          python scripts/generate_data.py --as-of 2026-10-24
-          dbt build
+      - name: Day 1 - load raw, full build, first snapshot
+        run: make day1
 
-      - name: Day 2 - incremental run and new SCD2 versions
-        run: |
-          python scripts/generate_data.py --as-of 2026-10-31
-          dbt build
+      - name: Day 2 - append to raw, incremental run, new SCD2 versions
+        run: make day2
 
-      - name: Rerun day 2 - must be idempotent
-        run: dbt build
+      - name: Load day 2 again - must change nothing downstream
+        run: make double-load
 
       - name: Build docs
         run: dbt docs generate --static

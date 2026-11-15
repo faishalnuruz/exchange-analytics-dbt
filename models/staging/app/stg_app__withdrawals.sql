@@ -9,3 +9,7 @@ select
     cast(completed_at as timestamp) as completed_at,
     cast(updated_at as timestamp) as updated_at
 from {{ source('app', 'withdrawals') }}
+qualify row_number() over (
+    partition by withdrawal_id
+    order by cast(updated_at as timestamp) desc, _loaded_at desc
+) = 1

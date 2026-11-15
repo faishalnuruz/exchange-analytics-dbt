@@ -11,3 +11,7 @@ select
     cast(executed_at as timestamp) as executed_at,
     cast(updated_at as timestamp) as updated_at
 from {{ source('app', 'trades') }}
+qualify row_number() over (
+    partition by trade_id
+    order by cast(updated_at as timestamp) desc, _loaded_at desc
+) = 1

@@ -15,6 +15,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  PY: python
+  DBT: dbt
   DBT_PROFILES_DIR: ${{ github.workspace }}
 
 jobs:
@@ -34,11 +36,7 @@ jobs:
 
       # The catalog is read from built tables, so the warehouse is built first.
       - name: Build the warehouse (two-day scenario)
-        run: |
-          python scripts/generate_data.py --as-of 2026-10-24
-          dbt build
-          python scripts/generate_data.py --as-of 2026-10-31
-          dbt build
+        run: make day1 day2
 
       - name: Generate docs
         run: |

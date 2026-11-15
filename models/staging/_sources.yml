@@ -1,28 +1,27 @@
 version: 2
 
-# Raw extracts land as CSV in data/raw/. Every column is read as text (all_varchar) so that
-# typing is an explicit, reviewable decision in the staging models, not an inference.
+# Raw tables are append-only and loaded by scripts/load_raw.py. Each holds every version of
+# every row the source ever sent, as text, plus _loaded_at. A key can appear many times.
+# Staging turns that into one typed, current row per key.
 sources:
   - name: app
-    description: Exchange backend database (OLTP). Daily extract.
-    meta:
-      external_location: "read_csv('data/raw/{name}.csv', all_varchar = true, header = true)"
+    description: Exchange backend database (OLTP), appended daily by update time.
+    schema: raw
     tables:
       - name: users
-        description: One row per registered user, current state. Rows are updated in place.
+        description: Every extracted version of a user row. The backend updates users in place.
       - name: kyc_submissions
-        description: One row per identity verification attempt.
+        description: Every extracted version of a KYC attempt (pending, then reviewed).
       - name: deposits
-        description: One row per deposit request. Status is updated in place.
+        description: Every extracted version of a deposit (pending, then completed or failed).
       - name: withdrawals
-        description: One row per withdrawal request. Status is updated in place.
+        description: Every extracted version of a withdrawal.
       - name: trades
-        description: One row per order execution from the matching engine.
+        description: Trade executions from the matching engine. Some are written days late.
 
   - name: market
     description: Daily closing prices from a market data provider.
-    meta:
-      external_location: "read_csv('data/raw/{name}.csv', all_varchar = true, header = true)"
+    schema: raw
     tables:
       - name: asset_prices
 
@@ -30,7 +29,6 @@ sources:
     description: >
       Product analytics events, in the shape of a GA4 / Mixpanel export. Clients retry on
       timeouts, so exact duplicates are expected, and offline devices deliver events days late.
-    meta:
-      external_location: "read_csv('data/raw/{name}.csv', all_varchar = true, header = true)"
+    schema: raw
     tables:
       - name: tracking_events

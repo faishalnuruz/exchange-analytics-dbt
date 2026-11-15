@@ -1,3 +1,4 @@
+-- A deposit is loaded as pending and again once settled. Keep the newest version.
 select
     deposit_id,
     cast(user_id as bigint) as user_id,
@@ -10,3 +11,7 @@ select
     cast(completed_at as timestamp) as completed_at,
     cast(updated_at as timestamp) as updated_at
 from {{ source('app', 'deposits') }}
+qualify row_number() over (
+    partition by deposit_id
+    order by cast(updated_at as timestamp) desc, _loaded_at desc
+) = 1
