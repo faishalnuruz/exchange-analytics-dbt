@@ -1,5 +1,5 @@
-PY  := .venv/bin/python
-DBT := .venv/bin/dbt
+PY  ?= .venv/bin/python
+DBT ?= .venv/bin/dbt
 export DBT_PROFILES_DIR := $(CURDIR)
 
 .PHONY: setup day1 day2 demo docs clean

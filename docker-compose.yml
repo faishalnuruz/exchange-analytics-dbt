@@ -1,0 +1,15 @@
+services:
+  # Plays the two-day scenario and exits:  docker compose run --rm demo
+  demo:
+    build: .
+
+  # Builds the warehouse, then serves the dbt docs site:  docker compose up docs
+  docs:
+    build: .
+    command: >
+      sh -c "make demo docs
+      && cp target/static_index.html target/index.html
+      && echo 'dbt docs: http://localhost:8080'
+      && python -m http.server 8080 --directory target"
+    ports:
+      - "127.0.0.1:8080:8080"

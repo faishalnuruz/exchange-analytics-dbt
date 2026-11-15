@@ -47,3 +47,10 @@ jobs:
         with:
           name: dbt-docs
           path: target/static_index.html
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run the demo in the container
+        run: docker compose run --rm demo
